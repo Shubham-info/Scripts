@@ -39,7 +39,6 @@ def get_vpc_details(account_id):
                 'VPC ID': vpc_id,
                 'CIDR Block': vpc['CidrBlock'],
                 'Region': boto3.session.Session().region_name,
-                'Availability Zones': [zone['ZoneName'] for zone in vpc['AvailabilityZones']],
                 'State': vpc['State']
             })
     except Exception as e:
