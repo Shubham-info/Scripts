@@ -18,9 +18,9 @@ def get_all_accounts():
 
     return [account['Id'] for account in accounts]
 
-def get_vpc_details(account_id):
-    """Fetches VPC details for a given account"""
-    ec2_client = boto3.client('ec2')
+def get_vpc_details(account_id, region):
+    """Fetches VPC details for a given account and region"""
+    ec2_client = boto3.client('ec2', region_name=region)
     vpcs = []
 
     try:
@@ -38,13 +38,19 @@ def get_vpc_details(account_id):
                 'VPC Name': vpc_name,
                 'VPC ID': vpc_id,
                 'CIDR Block': vpc['CidrBlock'],
-                'Region': boto3.session.Session().region_name,
+                'Region': region,
                 'State': vpc['State']
             })
     except Exception as e:
-        print(f"Error listing VPCs for account {account_id}: {e}")
+        print(f"Error listing VPCs for account {account_id} in region {region}: {e}")
 
     return vpcs
+
+def get_all_regions():
+    """Retrieves a list of all AWS regions"""
+    ec2_client = boto3.client('ec2')
+    regions = [region['RegionName'] for region in ec2_client.describe_regions()['Regions']]
+    return regions
 
 def export_details_to_csv(data, filename='vpc_details.csv'):
     """Exports data to a CSV file"""
@@ -62,7 +68,10 @@ if __name__ == '__main__':
     all_vpc_details = []
 
     all_accounts = get_all_accounts()
+    all_regions = get_all_regions()
+
     for account_id in all_accounts:
-        all_vpc_details.extend(get_vpc_details(account_id))
+        for region in all_regions:
+            all_vpc_details.extend(get_vpc_details(account_id, region))
 
     export_details_to_csv(all_vpc_details)
