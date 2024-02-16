@@ -30,37 +30,7 @@ def get_account_details():
 
     return accounts
 
-def get_bucket_details(account_id):
-    """Fetches S3 bucket details for a given account."""
-    session = boto3.Session(profile_name=None)  # Adjust if using profiles
-    s3_client = session.client('s3', region_name='us-east-1')  # Replace if needed
-    buckets = []
-
-    try:
-        response = s3_client.list_buckets()
-        for bucket in response['Buckets']:
-            try:
-                region = s3_client.get_bucket_location(Bucket=bucket['Name'])['LocationConstraint'] or 'None'
-                tags = s3_client.get_bucket_tagging(Bucket=bucket['Name'])['TagSet']
-            except Exception as e:
-                print(f"Error getting region or tags for bucket {bucket['Name']}: {e}")
-                region = 'None'
-                tags = []
-
-            buckets.append({
-                'Account ID': account_id,
-                'Bucket Name': bucket['Name'],
-                'Bucket Region': region,
-                'Resource ID (ARN)': f'arn:aws:s3:::{bucket["Name"]}',
-                'Creation Date': bucket['CreationDate'].strftime('%Y-%m-%d'),
-                'Tags': tags
-            })
-    except Exception as e:
-        print(f"Error listing buckets for account {account_id}: {e}")
-
-    return buckets
-
-def export_details_to_csv(data, filename='core_resource_details.csv'):
+def export_details_to_csv(data, filename='new_exported_file.csv'):
     """Exports data to a CSV file."""
     with open(filename, 'w', newline='') as csvfile:
         fieldnames = data[0].keys()
@@ -70,9 +40,4 @@ def export_details_to_csv(data, filename='core_resource_details.csv'):
 
 if __name__ == '__main__':
     all_account_details = get_account_details()
-
-    all_resource_details = []
-    for account in all_account_details:
-        all_resource_details.extend(get_bucket_details(account['Account ID']))
-
-    export_details_to_csv(all_resource_details)
+    export_details_to_csv(all_account_details)
